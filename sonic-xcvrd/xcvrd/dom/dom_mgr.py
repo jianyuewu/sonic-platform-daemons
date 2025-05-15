@@ -39,7 +39,7 @@ class DomInfoUpdateTask(threading.Thread):
         {'APPL_DB': 'PORT_TABLE', 'FILTER': ['flap_count']},
     ]
 
-    def __init__(self, namespaces, port_mapping, sfp_obj_dict, main_thread_stop_event, skip_cmis_mgr):
+    def __init__(self, namespaces, port_mapping, sfp_obj_dict, main_thread_stop_event, skip_cmis_mgr, platform_chassis):
         threading.Thread.__init__(self)
         self.name = "DomInfoUpdateTask"
         self.exc = None
@@ -50,6 +50,7 @@ class DomInfoUpdateTask(threading.Thread):
         self.namespaces = namespaces
         self.skip_cmis_mgr = skip_cmis_mgr
         self.sfp_obj_dict = sfp_obj_dict
+        self.platform_chassis = platform_chassis
         self.link_change_affected_ports = {}
         self.xcvr_table_helper = XcvrTableHelper(self.namespaces)
         self.xcvrd_utils = XCVRDUtils(self.sfp_obj_dict, helper_logger)
@@ -143,6 +144,9 @@ class DomInfoUpdateTask(threading.Thread):
     def post_port_sfp_firmware_info_to_db(self, logical_port_name, port_mapping, table,
                                 stop_event=threading.Event(), firmware_info_cache=None):
         for physical_port, physical_port_name in xcvrd.get_physical_port_name_dict(logical_port_name, port_mapping).items():
+            sfp = self.platform_chassis.get_sfp(physical_port)
+            api = sfp.get_xcvr_api()
+            self.log_notice("{}: DomInfoUpdateTask api id = {}".format(logical_port_name, id(api)))
             if stop_event.is_set():
                 break
 

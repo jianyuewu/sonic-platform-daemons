@@ -412,6 +412,7 @@ class SffManagerTask(threading.Thread):
                 try:
                     # Skip if XcvrApi is not supported
                     api = sfp.get_xcvr_api()
+                    self.log_notice("{}: SffManagerTask api id = {}".format(lport, id(api)))
                     if api is None:
                         self.log_error(
                             "{}: skipping sff_mgr since no xcvr api!".format(lport))
