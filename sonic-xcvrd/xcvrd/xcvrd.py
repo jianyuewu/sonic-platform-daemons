@@ -1089,6 +1089,7 @@ class CmisManagerTask(threading.Thread):
                 try:
                     # Skip if XcvrApi is not supported
                     api = sfp.get_xcvr_api()
+                    self.log_notice("{}: CmisManagerTask api id = {}".format(lport, id(api)))
                     if api is None:
                         self.log_error("{}: skipping CMIS state machine since no xcvr api!!!".format(lport))
                         self.update_port_transceiver_status_table_sw_cmis_state(lport, CMIS_STATE_READY)
@@ -1539,6 +1540,11 @@ class SfpStateUpdateTask(threading.Thread):
                 if stop_event.is_set():
                     break
 
+                if platform_chassis is not None:
+                    sfp = platform_chassis.get_sfp(physical_port)
+                    api = sfp.get_xcvr_api()
+                    helper_logger.log_error("{}: SfpStateUpdateTask api id = {}".format(logical_port_name, id(api)))
+
                 if not _wrapper_get_presence(physical_port):
                     update_port_transceiver_status_table_sw(logical_port_name, xcvr_table_helper.get_status_sw_tbl(asic_index), sfp_status_helper.SFP_STATUS_REMOVED)
                 else:
@@ -1630,7 +1636,7 @@ class SfpStateUpdateTask(threading.Thread):
         timeout = RETRY_PERIOD_FOR_SYSTEM_READY_MSECS
         state = STATE_INIT
         self.init()
-
+        
         sel, asic_context = port_event_helper.subscribe_port_config_change(self.namespaces)
         while not stopping_event.is_set():
             port_event_helper.handle_port_config_change(sel, asic_context, stopping_event, self.port_mapping, helper_logger, self.on_port_config_change)
@@ -2283,7 +2289,7 @@ class DaemonXcvrd(daemon_base.DaemonBase):
             self.threads.append(cmis_manager)
 
         # Start the dom sensor info update thread
-        dom_info_update = DomInfoUpdateTask(self.namespaces, port_mapping_data, self.sfp_obj_dict, self.stop_event, self.skip_cmis_mgr)
+        dom_info_update = DomInfoUpdateTask(self.namespaces, port_mapping_data, self.sfp_obj_dict, self.stop_event, self.skip_cmis_mgr, platform_chassis)
         dom_info_update.start()
         self.threads.append(dom_info_update)
 
